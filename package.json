@@ -1,0 +1,22 @@
+{
+  "name": "gemini-chatbot",
+  "version": "1.0.0",
+  "description": "Full-stack Gemini LLM Chatbot with clear frontend and backend folder structure",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js",
+    "db:migrate": "node backend/scripts/migrate.js",
+    "migrate": "node backend/scripts/migrate.js"
+  },
+  "keywords": [
+    "gemini",
+    "ai",
+    "chatbot",
+    "llm",
+    "express",
+    "supabase",
+    "frontend-backend"
+  ],
+  "author": "",
+  "license": "MIT"
+}

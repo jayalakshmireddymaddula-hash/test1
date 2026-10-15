@@ -1,0 +1,83 @@
+# ==============================================================
+# 1. Environment variables & Secret Keys (CRITICAL: NEVER COMMIT)
+# ==============================================================
+.env
+.env.*
+*.env
+backend/.env
+frontend/.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Always keep template files in git so collaborators know what variables are needed
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# ==============================================================
+# 2. Dependencies
+# ==============================================================
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+.pnp
+.pnp.js
+
+# ==============================================================
+# 3. Logs & Diagnostics
+# ==============================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==============================================================
+# 4. Build, Distribution & Cache Directories
+# ==============================================================
+dist/
+build/
+out/
+.cache/
+.temp/
+tmp/
+temp/
+
+# ==============================================================
+# 5. Operating System Files
+# ==============================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ==============================================================
+# 6. IDE & Editor Artifacts
+# ==============================================================
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==============================================================
+# 7. Local Agent / Assistant Workspace Caches
+# ==============================================================
+.gemini/
+.agents/

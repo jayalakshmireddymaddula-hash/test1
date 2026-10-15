@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini AI Nexus • Intelligent LLM Assistant with Supabase Sync</title>
+  <meta name="description" content="A powerful, modern chatbot powered by Google Gemini LLM with Supabase database persistence, streaming responses, markdown support, and distinct frontend/backend architecture.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Highlight.js for Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  
+  <!-- Marked.js for Markdown Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    
+    <!-- TOP NAVIGATION BAR -->
+    <header class="app-header" id="app-header">
+      <div class="header-left">
+        <div class="brand-badge" id="brand-badge">
+          <div class="gemini-sparkle">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" fill="url(#sparkle-grad)" />
+              <defs>
+                <linearGradient id="sparkle-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#38bdf8" />
+                  <stop offset="0.5" stop-color="#818cf8" />
+                  <stop offset="1" stop-color="#c084fc" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">Gemini <span class="gradient-text">Nexus</span></span>
+            <span class="architecture-pill" title="Separated Architecture">Full-Stack LLM</span>
+          </div>
+        </div>
+
+        <!-- Gemini API Key Status Indicator -->
+        <button class="status-indicator" id="connection-status-btn" title="Click to configure Gemini API Key">
+          <span class="status-dot checking" id="status-dot"></span>
+          <span class="status-label" id="status-label">Checking backend...</span>
+        </button>
+
+        <!-- Supabase Cloud Sync Status Indicator -->
+        <button class="status-indicator supabase-pill" id="supabase-status-btn" title="Click to configure Supabase Connection">
+          <svg class="supabase-icon" width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M13.2 2.5L2.8 14.8C2.3 15.4 2.8 16.3 3.6 16.3H11.5L10.8 21.5C10.7 22.1 11.4 22.6 11.9 22.1L22.2 9.8C22.7 9.2 22.2 8.3 21.4 8.3H13.5L14.2 3.1C14.3 2.5 13.6 2 13.2 2.5Z" fill="#3ECF8E"/>
+          </svg>
+          <span class="status-dot checking" id="supabase-status-dot"></span>
+          <span class="status-label" id="supabase-status-label">Supabase</span>
+        </button>
+      </div>
+
+      <div class="header-center">
+        <!-- Model Selector Dropdown -->
+        <div class="model-picker-wrapper">
+          <svg class="picker-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+            <path d="M12 12 2.1 12a10.1 10.1 0 0 0 1.9 4"></path>
+          </svg>
+          <select id="model-select" class="model-select" aria-label="Select Gemini Model">
+            <option value="gemini-1.5-flash" selected>Gemini 1.5 Flash (Fast & Smart)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Next-Gen)</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Reasoning)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Streaming Toggle Button -->
+        <button class="icon-btn active" id="streaming-toggle-btn" title="Toggle Real-Time Streaming" aria-label="Toggle Streaming">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+          <span class="btn-text">Stream</span>
+        </button>
+
+        <!-- Sync from Cloud (Supabase) -->
+        <button class="icon-btn" id="cloud-sync-btn" title="Sync / Fetch chat history from Supabase" aria-label="Sync from Supabase">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+          <span class="btn-text">Sync</span>
+        </button>
+
+        <!-- Clear Chat Button -->
+        <button class="icon-btn" id="clear-chat-btn" title="Clear Conversation" aria-label="Clear Conversation">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+          </svg>
+        </button>
+
+        <!-- Export Conversation -->
+        <button class="icon-btn" id="export-chat-btn" title="Export Chat to Markdown" aria-label="Export Chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
+          </svg>
+        </button>
+
+        <!-- Settings / API Key Modal Button -->
+        <button class="primary-pill-btn" id="open-settings-btn" aria-label="Open Settings and API Key dialog">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span class="btn-text">API & Supabase</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CHAT CONTAINER -->
+    <main class="chat-viewport" id="chat-viewport">
+      
+      <!-- WELCOME HERO VIEW (Visible when chat has no messages) -->
+      <section class="welcome-hero" id="welcome-hero">
+        <div class="welcome-orb"></div>
+        <div class="welcome-icon-box">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" fill="url(#hero-sparkle)" />
+            <defs>
+              <linearGradient id="hero-sparkle" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8" />
+                <stop offset="0.5" stop-color="#818cf8" />
+                <stop offset="1" stop-color="#c084fc" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1 class="welcome-title">How can <span class="gradient-text">Gemini</span> assist you today?</h1>
+        <p class="welcome-subtitle">
+          Experience conversational AI with real-time streaming, rich markdown, and optional <strong style="color: #3ecf8e;">Supabase</strong> cloud database message persistence.
+        </p>
+
+        <!-- Quick Prompt Cards -->
+        <div class="quick-prompts-grid" id="quick-prompts-grid">
+          <button class="prompt-card" data-prompt="Explain Quantum Computing to a high schooler using vivid analogies and real-world examples.">
+            <div class="prompt-card-header">
+              <span class="prompt-icon">⚛️</span>
+              <span class="prompt-category">Physics & Concepts</span>
+            </div>
+            <div class="prompt-card-body">
+              <strong>Explain Quantum Computing</strong>
+              <p>Simple analogies and principles for high schoolers.</p>
+            </div>
+          </button>
+
+          <button class="prompt-card" data-prompt="Write a clean, modular Node.js REST API with Express, JWT authentication, and input validation.">
+            <div class="prompt-card-header">
+              <span class="prompt-icon">💻</span>
+              <span class="prompt-category">Code Architecture</span>
+            </div>
+            <div class="prompt-card-body">
+              <strong>Build a Node.js REST API</strong>
+              <p>Express server with JWT authentication and middleware.</p>
+            </div>
+          </button>
+
+          <button class="prompt-card" data-prompt="Analyze the trade-offs between SQL (PostgreSQL / Supabase) vs NoSQL for high-scale applications.">
+            <div class="prompt-card-header">
+              <span class="prompt-icon">📊</span>
+              <span class="prompt-category">Database Design</span>
+            </div>
+            <div class="prompt-card-body">
+              <strong>Supabase / SQL vs NoSQL</strong>
+              <p>Compare performance, scalability, and consistency.</p>
+            </div>
+          </button>
+
+          <button class="prompt-card" data-prompt="Write an engaging, atmospheric sci-fi opening scene about the first contact with an autonomous orbital construct.">
+            <div class="prompt-card-header">
+              <span class="prompt-icon">🚀</span>
+              <span class="prompt-category">Creative Writing</span>
+            </div>
+            <div class="prompt-card-body">
+              <strong>Sci-Fi Story Scene</strong>
+              <p>Engaging opening about an orbital construct contact.</p>
+            </div>
+          </button>
+        </div>
+
+        <div class="architecture-banner">
+          <div class="arch-tag">Frontend: <code>HTML / CSS / JS / frontend/.env</code></div>
+          <div class="arch-divider">⇄</div>
+          <div class="arch-tag">Backend: <code>Express / backend/.env</code></div>
+          <div class="arch-divider">⇄</div>
+          <div class="arch-tag" style="color: #3ecf8e;">Database: <code>Supabase (PostgreSQL)</code></div>
+        </div>
+      </section>
+
+      <!-- CHAT MESSAGES STREAM CONTAINER -->
+      <section class="messages-container" id="messages-container" aria-live="polite">
+        <!-- Dynamically populated by app.js -->
+      </section>
+
+      <!-- TYPING INDICATOR -->
+      <div class="typing-indicator-wrapper hidden" id="typing-indicator" aria-label="Gemini is generating response">
+        <div class="avatar-mini bot-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" fill="url(#typing-sparkle)" />
+            <defs>
+              <linearGradient id="typing-sparkle" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8" />
+                <stop offset="0.5" stop-color="#818cf8" />
+                <stop offset="1" stop-color="#c084fc" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="typing-bubble">
+          <div class="typing-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+          <span class="typing-label">Gemini is thinking...</span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- FOOTER INPUT BAR -->
+    <footer class="chat-footer" id="chat-footer">
+      <div class="input-container">
+        
+        <!-- Live Action Status Banner (Shown if error or warning) -->
+        <div class="alert-banner hidden" id="alert-banner">
+          <span class="alert-icon" id="alert-icon">⚠️</span>
+          <span class="alert-text" id="alert-text">No Gemini API key detected. Please add your key in settings.</span>
+          <button class="alert-action-btn" id="alert-action-btn">Configure</button>
+        </div>
+
+        <form class="chat-form" id="chat-form" onsubmit="return false;">
+          <div class="textarea-wrapper">
+            <textarea 
+              id="user-input" 
+              class="chat-textarea" 
+              placeholder="Ask Gemini anything... (Enter to send, Shift+Enter for new line)" 
+              rows="1" 
+              maxlength="4000"
+              aria-label="Message prompt"
+            ></textarea>
+            
+            <div class="input-controls">
+              <span class="char-count" id="char-count">0 / 4000</span>
+              
+              <!-- Stop Streaming Button -->
+              <button type="button" class="stop-btn hidden" id="stop-generation-btn" title="Stop Generation" aria-label="Stop generation">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="5" y="5" width="14" height="14" rx="2" />
+                </svg>
+                <span>Stop</span>
+              </button>
+
+              <!-- Send Button -->
+              <button type="submit" class="send-btn" id="send-btn" title="Send Message" aria-label="Send message">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="input-hints">
+          <span>Google Gemini API</span>
+          <span class="bullet">•</span>
+          <span id="cloud-sync-status-hint">Supabase: Not Configured</span>
+          <span class="bullet">•</span>
+          <span>Shift+Enter for newline</span>
+          <span class="bullet">•</span>
+          <span class="key-status-hint" id="key-status-hint">API Key: Checking...</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- SETTINGS & CONFIGURATION MODAL -->
+    <div class="modal-backdrop hidden" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrapper">
+            <div class="modal-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </div>
+            <div>
+              <h2 id="modal-title" class="modal-title">Application Settings & Integrations</h2>
+              <p class="modal-subtitle">Configure Google Gemini LLM and Supabase Cloud Database</p>
+            </div>
+          </div>
+          <button class="close-modal-btn" id="close-settings-btn" aria-label="Close dialog">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          
+          <!-- TAB SWITCHER / SECTIONS -->
+          <!-- 1. GEMINI API KEY SECTION -->
+          <div class="settings-section-card">
+            <div class="section-badge-header">
+              <span class="badge-dot gemini"></span>
+              <strong>1. Google Gemini LLM</strong>
+            </div>
+
+            <div class="form-group">
+              <div class="label-row">
+                <label for="api-key-input" class="form-label">Gemini API Key</label>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="link-external">
+                  Get free Key from Google AI Studio ↗
+                </a>
+              </div>
+              <div class="input-with-action">
+                <input 
+                  type="password" 
+                  id="api-key-input" 
+                  class="form-input" 
+                  placeholder="AIzaSy..." 
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button type="button" class="toggle-eye-btn" id="toggle-key-visibility-btn" title="Show/Hide API Key">
+                  <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+              <p class="form-hint" id="key-source-hint">
+                Enter your key here (saved in browser) or set <code>GEMINI_API_KEY</code> in <code>backend/.env</code>.
+              </p>
+              
+              <div class="key-actions-row">
+                <button type="button" class="secondary-btn" id="validate-key-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5"></path>
+                  </svg>
+                  <span>Test Gemini Key</span>
+                </button>
+                <span class="validation-message" id="validation-message"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. SUPABASE CONFIGURATION SECTION -->
+          <div class="settings-section-card supabase-card">
+            <div class="section-badge-header">
+              <svg class="supabase-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M13.2 2.5L2.8 14.8C2.3 15.4 2.8 16.3 3.6 16.3H11.5L10.8 21.5C10.7 22.1 11.4 22.6 11.9 22.1L22.2 9.8C22.7 9.2 22.2 8.3 21.4 8.3H13.5L14.2 3.1C14.3 2.5 13.6 2 13.2 2.5Z" fill="#3ECF8E"/>
+              </svg>
+              <strong>2. Supabase Cloud Database</strong>
+              <span class="supabase-tag">PostgreSQL Persistence</span>
+            </div>
+
+            <div class="form-group">
+              <div class="label-row">
+                <label for="supabase-url-input" class="form-label">Supabase Project URL (<code>SUPABASE_URL</code>)</label>
+                <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" class="link-external" style="color: #3ecf8e;">
+                  Supabase Dashboard ↗
+                </a>
+              </div>
+              <input 
+                type="text" 
+                id="supabase-url-input" 
+                class="form-input" 
+                placeholder="https://xyzproject.supabase.co" 
+                spellcheck="false"
+              />
+            </div>
+
+            <div class="form-group">
+              <div class="label-row">
+                <label for="supabase-key-input" class="form-label">Supabase Anon Key (<code>SUPABASE_ANON_KEY</code>)</label>
+              </div>
+              <div class="input-with-action">
+                <input 
+                  type="password" 
+                  id="supabase-key-input" 
+                  class="form-input" 
+                  placeholder="eyJhbGciOi..." 
+                  spellcheck="false"
+                />
+                <button type="button" class="toggle-eye-btn" id="toggle-supabase-key-btn" title="Show/Hide Supabase Key">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
+              <p class="form-hint">
+                Configured in <code>frontend/.env</code> and <code>backend/.env</code> for cloud message persistence.
+              </p>
+            </div>
+
+            <div class="key-actions-row">
+              <button type="button" class="secondary-btn" id="test-supabase-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                </svg>
+                <span>Test Supabase</span>
+              </button>
+              <button type="button" class="secondary-btn" id="modal-sync-supabase-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+                <span>Sync Messages</span>
+              </button>
+              <span class="validation-message" id="supabase-validation-message"></span>
+            </div>
+          </div>
+
+          <!-- 3. SYSTEM INSTRUCTIONS / PERSONA -->
+          <div class="form-group">
+            <label for="system-instruction-input" class="form-label">System Persona & Instructions</label>
+            <div class="persona-chips" id="persona-chips">
+              <button type="button" class="persona-chip active" data-instruction="You are a helpful, brilliant, and concise AI assistant powered by Google Gemini. Answer queries with clarity, structured markdown, and optimal code patterns.">Default Assistant</button>
+              <button type="button" class="persona-chip" data-instruction="You are a Principal Software Engineer. Provide modern, clean, production-grade code with error handling, type safety, and architecture explanations.">Senior Engineer</button>
+              <button type="button" class="persona-chip" data-instruction="You are a creative, evocative writer. Craft vivid stories, dynamic metaphors, and compelling narratives.">Creative Writer</button>
+              <button type="button" class="persona-chip" data-instruction="You are a Socratic tutor. Guide the user step-by-step with thoughtful questions and deep conceptual clarity.">Socratic Tutor</button>
+            </div>
+            <textarea 
+              id="system-instruction-input" 
+              class="form-textarea" 
+              rows="2" 
+              placeholder="Custom instructions for how Gemini should respond..."
+            >You are a helpful, brilliant, and concise AI assistant powered by Google Gemini. Answer queries with clarity, structured markdown, and optimal code patterns.</textarea>
+          </div>
+
+          <!-- 4. TEMPERATURE SLIDER -->
+          <div class="form-group">
+            <div class="label-row">
+              <label for="temperature-slider" class="form-label">Temperature: <span id="temp-display">0.7</span></label>
+              <span class="temp-description" id="temp-desc">Balanced & Conversational</span>
+            </div>
+            <input 
+              type="range" 
+              id="temperature-slider" 
+              class="form-range" 
+              min="0.0" 
+              max="1.5" 
+              step="0.1" 
+              value="0.7"
+            />
+            <div class="range-labels">
+              <span>0.0 (Precise)</span>
+              <span>0.7 (Balanced)</span>
+              <span>1.5 (Creative)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="secondary-btn" id="cancel-settings-btn">Cancel</button>
+          <button type="button" class="primary-btn" id="save-settings-btn">Save All Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toast-container" aria-live="assertive"></div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
